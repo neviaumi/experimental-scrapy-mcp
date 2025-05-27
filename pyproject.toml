@@ -5,14 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "crawlers",
     "mcp[cli]==1.9.1",
-]
-
-[tool.uv.sources]
-crawlers = { workspace = true }
-
-[tool.uv.workspace]
-members = [
-    "crawlers"
+    "scrapy==2.13.0",
+    "beautifulsoup4==4.13.4",
 ]

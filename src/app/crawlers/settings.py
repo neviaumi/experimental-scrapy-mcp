@@ -7,10 +7,10 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = "crawlers-2"
-
-SPIDER_MODULES = ["src.crawlers.spiders"]
-NEWSPIDER_MODULE = "src.crawlers.spiders"
+BOT_NAME = "crawlers"
+TWISTED_REACTOR= "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
+SPIDER_MODULES = ["crawlers.spiders"]
+NEWSPIDER_MODULE = "crawlers.spiders"
 
 ADDONS = {}
 

@@ -1,17 +1,19 @@
 from mcp.server.fastmcp import FastMCP
-from crawlers import DiyDotComProductSearchSpider, settings, DiyDotComProductDetailSpider
+from crawlers import DiyDotComProductSearchSpider, settings, DiyDotComProductDetailSpider, with_result_store, \
+    with_in_memory_storage_pipeline
 from scrapy.crawler import CrawlerProcess
-import app.crawler.pipelines as pipelines
 import json
 import logging
 
-mcp = FastMCP("Hardware Store", dependencies=["crawlers", "app"])
+mcp = FastMCP("Hardware Store", dependencies=["scrapy", "beautifulsoup4"])
 
 logging.info("Running?")
-@mcp.resource("spider://diy.com/products/search/{keyword}")
+
+
+# @mcp.resource("spider://diy.com/products/search/{keyword}")
+@mcp.tool("search_products_on_diy_dot_com", "Search for products on diy.com based on a provided keyword.")
 def search_products_on_diy_dot_com(keyword: str) -> str:
-    """
-        MCP Resource: Search for products on diy.com based on a provided keyword.
+    """Search for products on diy.com based on a provided keyword.
 
         Args:
             keyword (str): The search term to query diy.com’s product catalog.
@@ -38,19 +40,19 @@ def search_products_on_diy_dot_com(keyword: str) -> str:
             ]
         """
     result = []
-    crawler_settings = pipelines.with_in_memory_storage_pipeline(settings)
+    crawler_settings = with_in_memory_storage_pipeline(settings)
     crawler_settings.set('LOG_ENABLED', False)
     process = CrawlerProcess(crawler_settings)
-    crawler = pipelines.with_result_store(process.create_crawler(DiyDotComProductSearchSpider), result)
+    crawler = with_result_store(process.create_crawler(DiyDotComProductSearchSpider), result)
     process.crawl(crawler, keyword=keyword)
     process.start()
     return json.dumps(result)
 
 
-@mcp.resource("spider://diy.com/products/{product_url}")
+# @mcp.resource("spider://diy.com/products/{product_url}")
+@mcp.tool("get_product_detail_on_diy_dot_com", "Retrieve detailed product information from diy.com for a specific product URL.")
 def get_product_detail_on_diy_dot_com(product_url: str) -> str:
-    """
-    MCP Resource: Retrieve detailed product information from diy.com for a specific product URL.
+    """Retrieve detailed product information from diy.com for a specific product URL.
 
     Args:
         product_url (str): The relative product URL (e.g., `/product/hammer`).
@@ -70,10 +72,10 @@ def get_product_detail_on_diy_dot_com(product_url: str) -> str:
     """
 
     result = []
-    crawler_settings = pipelines.with_in_memory_storage_pipeline(settings)
+    crawler_settings = with_in_memory_storage_pipeline(settings)
     crawler_settings.set('LOG_ENABLED', False)
     process = CrawlerProcess(crawler_settings)
-    crawler = pipelines.with_result_store(process.create_crawler(DiyDotComProductDetailSpider), result)
+    crawler = with_result_store(process.create_crawler(DiyDotComProductDetailSpider), result)
     process.crawl(crawler, url=product_url)
     process.start()
     return json.dumps(result[0])

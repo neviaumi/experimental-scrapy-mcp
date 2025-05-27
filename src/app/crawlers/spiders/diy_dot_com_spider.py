@@ -4,17 +4,31 @@ from bs4 import BeautifulSoup
 
 DIY_DOT_COM_URL = "https://www.diy.com"
 
+
 class DiyDotComProductSearchSpider(scrapy.Spider):
     name = "diy.com Product Search"
 
     def __init__(self, keyword, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.keyword = keyword
-    async def start(self):
-        yield scrapy.Request(f"{DIY_DOT_COM_URL}/search?term={urllib.parse.urlencode({"term":self.keyword})}", callback=self.parse)
+
+    # async def start(self):
+    #     print("Started on start")
+    #     query = urllib.parse.urlencode({"term": self.keyword})
+    #     url = f"{DIY_DOT_COM_URL}/search?{query}"
+    #     req = scrapy.Request(url, callback=self.parse)
+    #     print(req.callback)
+    #     yield req
+
+    def start_requests(self):
+        print("Started on start_requests")
+        query = urllib.parse.urlencode({"term": self.keyword})
+        url = f"{DIY_DOT_COM_URL}/search?{query}"
+        yield scrapy.Request(url, callback=self.parse)
 
     def parse(self, response):
-        products = response.css('[data-testid=\'product\']')
+        print("Started on parse")
+
         def _extract_product(product_selector):
             product_url = product_selector.css('[data-testid=\'product-link\']::attr(href)').get()
             return {
@@ -22,7 +36,9 @@ class DiyDotComProductSearchSpider(scrapy.Spider):
                 "price": product_selector.css('[data-testid=\'product-price\']::text').get(),
                 "url": f"{DIY_DOT_COM_URL}{product_url}"
             }
-        return [_extract_product(product) for product in products]
+
+        for product in response.css('[data-testid=\'product\']'):
+            yield _extract_product(product)
 
 
 def clean_html(html):
@@ -39,11 +55,12 @@ class DiyDotComProductDetailSpider(scrapy.Spider):
     def __init__(self, url, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.url = url
-    async def start(self):
+
+    def start_requests(self):
         yield scrapy.Request(self.url, callback=self.parse)
 
     def parse(self, response):
-        return {
+        yield {
             "title": response.css('[data-testid=\'product-name\']::text').get(),
             "price": response.css('[data-testid=\'product-price\']::text').get(),
             "detail": clean_html(response.css('#product-details').get())
