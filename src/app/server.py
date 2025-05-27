@@ -5,7 +5,6 @@ import json
 
 mcp = FastMCP("Hardware Store", dependencies=["crawlee", "beautifulsoup4"])
 
-# @mcp.resource("spider://diy.com/products/search/{keyword}")
 @mcp.tool("search_products_on_diy_dot_com", "Search for products on diy.com based on a provided keyword.")
 async def search_products_on_diy_dot_com(keyword: str) -> str:
     """Search for products on diy.com based on a provided keyword.
@@ -19,6 +18,7 @@ async def search_products_on_diy_dot_com(keyword: str) -> str:
                     - "title" (str): The product name.
                     - "price" (str): The price of the product as a string.
                     - "url" (str): The full URL linking to the product's detail page.
+                    - "promo" (str): The promotional text for the product, if any.
 
         Example Result:
             [
@@ -39,7 +39,6 @@ async def search_products_on_diy_dot_com(keyword: str) -> str:
     return json.dumps(result)
 
 
-# @mcp.resource("spider://diy.com/products/{product_url}")
 @mcp.tool("get_product_detail_on_diy_dot_com", "Retrieve detailed product information from diy.com for a specific product URL.")
 async def get_product_detail_on_diy_dot_com(product_url: str) -> str:
     """Retrieve detailed product information from diy.com for a specific product URL.
@@ -52,6 +51,7 @@ async def get_product_detail_on_diy_dot_com(product_url: str) -> str:
                 - "title" (str): The product name.
                 - "price" (str): The price of the product as a string.
                 - "detail" (str): Cleaned HTML content describing the product.
+                - "promo" (str): The promotional text for the product, if any.
 
     Example Result:
         {
