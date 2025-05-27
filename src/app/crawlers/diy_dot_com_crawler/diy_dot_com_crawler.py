@@ -102,5 +102,3 @@ async def product_search(keyword: str) -> list[ProductSearchResponse]:
     result = [item for item in dataset.items]
     crawler.stop()
     return result
-
-__all__ = ['product_search', 'product_detail']
