@@ -3,13 +3,14 @@ import urllib.parse
 
 from crawlee.crawlers import HttpCrawler
 from crawlee.http_clients import HttpxHttpClient
-from crawlee.storage_clients import MemoryStorageClient
 from crawlee import Request
 from crawlee.crawlers import HttpCrawlingContext
 from crawlee.router import Router
+from crawlee.storages import Dataset
+
 import json
 
-router = Router[HttpCrawlingContext ]()
+router = Router[HttpCrawlingContext]()
 TOOLSTATION_API = "https://www.toolstation.com/api"
 
 
@@ -26,40 +27,34 @@ async def toolstation_product_search_handler(context: HttpCrawlingContext) -> No
         }
 
     for product in body["response"]["docs"]:
-        await context.push_data(_extract_product(product))
+        await context.push_data(_extract_product(product), dataset_name=context.request.id)
+
 
 class ProductSearchResponse(TypedDict):
     title: str
     price: str
     url: str
+    promo: str | None
 
 
 async def product_search(keyword: str) -> list[ProductSearchResponse]:
-    crawler = HttpCrawler(
-        configure_logging=False,
-        request_handler=router,
-        http_client=HttpxHttpClient(),
-        storage_client=MemoryStorageClient(
-            storage_dir="",
-            default_request_queue_id="",
-            default_key_value_store_id="",
-            default_dataset_id="",
-            write_metadata=False,
-            persist_storage=False),
-    )
-
     query = urllib.parse.urlencode(
         {"request_type": "search", "q": keyword, "start": "0", "search_type": "keyword",
          "skipCache": "true"})
+    request = Request.from_url(f"{TOOLSTATION_API}/search/crs?{query}", label="toolstation product search")
+    dataset = await Dataset.open(name=request.id)
+    crawler = HttpCrawler(
+        configure_logging=False,
+        request_handler=router,
+        http_client=HttpxHttpClient()
+    )
 
     await crawler.run(
         [
-            Request.from_url(
-                f"{TOOLSTATION_API}/search/crs?{query}",
-                label="toolstation product search"),
+            request
         ]
     )
-    dataset = await crawler.get_data()
-    result = [item for item in dataset.items]
+    result = [item for item in (await dataset.get_data()).items]
     crawler.stop()
+    await dataset.drop()
     return result

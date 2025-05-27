@@ -4,10 +4,10 @@ from bs4 import BeautifulSoup
 
 from crawlee.crawlers import ParselCrawler
 from crawlee.http_clients import HttpxHttpClient
-from crawlee.storage_clients import MemoryStorageClient
 from crawlee import Request
 from crawlee.crawlers import ParselCrawlingContext
 from crawlee.router import Router
+from crawlee.storages import Dataset
 
 router = Router[ParselCrawlingContext]()
 WICKES_URL = "https://www.wickes.co.uk"
@@ -26,7 +26,7 @@ async def wickes_product_search_handler(context: ParselCrawlingContext) -> None:
         }
 
     for product in context.selector.css('[data-product-code]'):
-        await context.push_data(_extract_product(product))
+        await context.push_data(_extract_product(product), dataset_name=context.request.id)
 
 @router.handler(label="wickes product detail")
 async def wickes_product_detail_handler(context: ParselCrawlingContext) -> None:
@@ -43,7 +43,7 @@ async def wickes_product_detail_handler(context: ParselCrawlingContext) -> None:
         "description": context.selector.css('.product-main-info__description::text').get().strip(),
         "detail": clean_html(context.selector.css('.additional-info').get()),
         "promo": "".join(context.selector.css('.pdp-price__description *::text').getall())
-    })
+    }, dataset_name=context.request.id)
 
 
 class ProductDetailResponse(TypedDict):
@@ -54,26 +54,21 @@ class ProductDetailResponse(TypedDict):
     promo: str | None
 
 async def product_detail(url: str) -> ProductDetailResponse:
+    request = Request.from_url(url, label="wickes product detail")
+    dataset = await Dataset.open(name=request.id)
     crawler = ParselCrawler(
         configure_logging=False,
         request_handler=router,
-        http_client=HttpxHttpClient(),
-        storage_client=MemoryStorageClient(
-            storage_dir="",
-            default_request_queue_id="",
-            default_key_value_store_id="",
-            default_dataset_id="",
-            write_metadata=False,
-            persist_storage=False),
+        http_client=HttpxHttpClient()
     )
     await crawler.run(
         [
-            Request.from_url(url, label="wickes product detail"),
+            request,
         ]
     )
-    dataset = await crawler.get_data()
-    result = [item for item in dataset.items]
+    result = [item for item in (await dataset.get_data()).items]
     crawler.stop()
+    await dataset.drop()
     return result[0]
 
 
@@ -85,27 +80,22 @@ class ProductSearchResponse(TypedDict):
 
 
 async def product_search(keyword: str) -> list[ProductSearchResponse]:
+    query = urllib.parse.urlencode({"q": keyword})
+    request = Request.from_url(f"{WICKES_URL}/search?{query}", label="wickes product search")
+    dataset = await Dataset.open(name=request.id)
     crawler = ParselCrawler(
         configure_logging=False,
         request_handler=router,
-        http_client=HttpxHttpClient(),
-        storage_client=MemoryStorageClient(
-            storage_dir="",
-            default_request_queue_id="",
-            default_key_value_store_id="",
-            default_dataset_id="",
-            write_metadata=False,
-            persist_storage=False),
+        http_client=HttpxHttpClient()
     )
 
-    query = urllib.parse.urlencode({"q": keyword})
 
     await crawler.run(
         [
-            Request.from_url(f"{WICKES_URL}/search?{query}", label="wickes product search"),
+            request
         ]
     )
-    dataset = await crawler.get_data()
-    result = [item for item in dataset.items]
+    result = [item for item in (await dataset.get_data()).items]
     crawler.stop()
+    await dataset.drop()
     return result
