@@ -1,18 +1,13 @@
 from mcp.server.fastmcp import FastMCP
-from crawlers import DiyDotComProductSearchSpider, settings, DiyDotComProductDetailSpider, with_result_store, \
-    with_in_memory_storage_pipeline
-from scrapy.crawler import CrawlerProcess
+import crawlers.diy_dot_com_crawler as diy_dot_com_crawler
+
 import json
-import logging
 
-mcp = FastMCP("Hardware Store", dependencies=["scrapy", "beautifulsoup4"])
-
-logging.info("Running?")
-
+mcp = FastMCP("Hardware Store", dependencies=["crawlee", "beautifulsoup4"])
 
 # @mcp.resource("spider://diy.com/products/search/{keyword}")
 @mcp.tool("search_products_on_diy_dot_com", "Search for products on diy.com based on a provided keyword.")
-def search_products_on_diy_dot_com(keyword: str) -> str:
+async def search_products_on_diy_dot_com(keyword: str) -> str:
     """Search for products on diy.com based on a provided keyword.
 
         Args:
@@ -39,19 +34,14 @@ def search_products_on_diy_dot_com(keyword: str) -> str:
                 }
             ]
         """
-    result = []
-    crawler_settings = with_in_memory_storage_pipeline(settings)
-    crawler_settings.set('LOG_ENABLED', False)
-    process = CrawlerProcess(crawler_settings)
-    crawler = with_result_store(process.create_crawler(DiyDotComProductSearchSpider), result)
-    process.crawl(crawler, keyword=keyword)
-    process.start()
+    result = await diy_dot_com_crawler.product_search(keyword)
+
     return json.dumps(result)
 
 
 # @mcp.resource("spider://diy.com/products/{product_url}")
 @mcp.tool("get_product_detail_on_diy_dot_com", "Retrieve detailed product information from diy.com for a specific product URL.")
-def get_product_detail_on_diy_dot_com(product_url: str) -> str:
+async def get_product_detail_on_diy_dot_com(product_url: str) -> str:
     """Retrieve detailed product information from diy.com for a specific product URL.
 
     Args:
@@ -71,11 +61,5 @@ def get_product_detail_on_diy_dot_com(product_url: str) -> str:
         }
     """
 
-    result = []
-    crawler_settings = with_in_memory_storage_pipeline(settings)
-    crawler_settings.set('LOG_ENABLED', False)
-    process = CrawlerProcess(crawler_settings)
-    crawler = with_result_store(process.create_crawler(DiyDotComProductDetailSpider), result)
-    process.crawl(crawler, url=product_url)
-    process.start()
-    return json.dumps(result[0])
+    result = await diy_dot_com_crawler.product_detail(product_url)
+    return json.dumps(result)
