@@ -1,0 +1,17 @@
+env:
+  CI: true
+jobs:
+  test:
+    environment: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{github.head_ref}}
+      - name: Use Python3
+        uses: actions/setup-python@v5
+      - run: bash ./scripts/setup.sh
+      - run: bash ./scripts/test.sh
+name: Verify PR
+
+on: pull_request
