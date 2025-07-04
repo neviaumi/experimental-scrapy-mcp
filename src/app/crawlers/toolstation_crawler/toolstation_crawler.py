@@ -20,14 +20,18 @@ async def toolstation_product_search_handler(context: HttpCrawlingContext) -> No
 
     def _extract_product(product):
         return {
-            'title': product["title"].strip(),
+            "title": product["title"].strip(),
             "price": f"£{product['price']}",
             "url": product["url"].strip(),
-            "promo": product['weboverlaytext'] if 'for' in product.get("weboverlaytext", '') else None
+            "promo": product["weboverlaytext"]
+            if "for" in product.get("weboverlaytext", "")
+            else None,
         }
 
     for product in body["response"]["docs"]:
-        await context.push_data(_extract_product(product), dataset_name=context.request.id)
+        await context.push_data(
+            _extract_product(product), dataset_name=context.request.id
+        )
 
 
 class ProductSearchResponse(TypedDict):
@@ -39,21 +43,23 @@ class ProductSearchResponse(TypedDict):
 
 async def product_search(keyword: str) -> list[ProductSearchResponse]:
     query = urllib.parse.urlencode(
-        {"request_type": "search", "q": keyword, "start": "0", "search_type": "keyword",
-         "skipCache": "true"})
-    request = Request.from_url(f"{TOOLSTATION_API}/search/crs?{query}", label="toolstation product search")
+        {
+            "request_type": "search",
+            "q": keyword,
+            "start": "0",
+            "search_type": "keyword",
+            "skipCache": "true",
+        }
+    )
+    request = Request.from_url(
+        f"{TOOLSTATION_API}/search/crs?{query}", label="toolstation product search"
+    )
     dataset = await Dataset.open(name=request.id)
     crawler = HttpCrawler(
-        configure_logging=False,
-        request_handler=router,
-        http_client=HttpxHttpClient()
+        configure_logging=False, request_handler=router, http_client=HttpxHttpClient()
     )
 
-    await crawler.run(
-        [
-            request
-        ]
-    )
+    await crawler.run([request])
     result = [item for item in (await dataset.get_data()).items]
     crawler.stop()
     await dataset.drop()

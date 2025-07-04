@@ -9,20 +9,24 @@ from crawlee.storage_clients import MemoryStorageClient
 
 import json
 
-service_locator.set_storage_client(MemoryStorageClient(
-    storage_dir="",
-    default_request_queue_id="",
-    default_key_value_store_id="",
-    default_dataset_id="",
-    write_metadata=False,
-    persist_storage=False))
+service_locator.set_storage_client(
+    MemoryStorageClient(
+        storage_dir="",
+        default_request_queue_id="",
+        default_key_value_store_id="",
+        default_dataset_id="",
+        write_metadata=False,
+        persist_storage=False,
+    )
+)
 mcp = FastMCP("Hardware Store", dependencies=["crawlee[parsel]", "beautifulsoup4"])
 
 
 @mcp.prompt("Hardware store staff", "helpful assistant for a hardware store")
 def hardware_store_staff() -> list[prompts.base.Message]:
     return [
-        prompts.base.UserMessage(content="""You are a knowledgeable hardware store assistant with expertise in DIY tools and equipment. Your role is to:
+        prompts.base.UserMessage(
+            content="""You are a knowledgeable hardware store assistant with expertise in DIY tools and equipment. Your role is to:
 
 1. UNDERSTAND REQUIREMENTS:
 - Listen carefully to customer needs and use cases
@@ -54,48 +58,55 @@ When suggesting products, format your response as:
 • Key Features
 • Why it's recommended
 
-Remember to get specific details about the customer's project before making recommendations to ensure the most suitable tools are suggested."""),
+Remember to get specific details about the customer's project before making recommendations to ensure the most suitable tools are suggested."""
+        ),
         prompts.base.AssistantMessage(
-            content="""Welcome to the Hardware Store! I'm here to help you find the right tools and equipment for your project. Could you tell me about what you're working on?""")
+            content="""Welcome to the Hardware Store! I'm here to help you find the right tools and equipment for your project. Could you tell me about what you're working on?"""
+        ),
     ]
 
 
-@mcp.tool("search_products_on_diy_dot_com", "Search for products on diy.com based on a provided keyword.")
+@mcp.tool(
+    "search_products_on_diy_dot_com",
+    "Search for products on diy.com based on a provided keyword.",
+)
 async def search_products_on_diy_dot_com(keyword: str) -> str:
     """Search for products on diy.com based on a provided keyword.
 
-        Args:
-            keyword (str): The search term to query diy.com’s product catalog.
+    Args:
+        keyword (str): The search term to query diy.com’s product catalog.
 
-        Returns:
-            str: A JSON-encoded array of product data matching the given keyword.
-                 Each product entry contains:
-                    - "title" (str): The product name.
-                    - "price" (str): The price of the product as a string.
-                    - "url" (str): The full URL linking to the product's detail page.
-                    - "promo" (str): The promotional text for the product, if any.
+    Returns:
+        str: A JSON-encoded array of product data matching the given keyword.
+             Each product entry contains:
+                - "title" (str): The product name.
+                - "price" (str): The price of the product as a string.
+                - "url" (str): The full URL linking to the product's detail page.
+                - "promo" (str): The promotional text for the product, if any.
 
-        Example Result:
-            [
-                {
-                    "title": "Hammer",
-                    "price": "£9.99",
-                    "url": "https://www.diy.com/hammer"
-                },
-                {
-                    "title": "Drill",
-                    "price": "£49.99",
-                    "url": "https://www.diy.com/drill"
-                }
-            ]
-        """
+    Example Result:
+        [
+            {
+                "title": "Hammer",
+                "price": "£9.99",
+                "url": "https://www.diy.com/hammer"
+            },
+            {
+                "title": "Drill",
+                "price": "£49.99",
+                "url": "https://www.diy.com/drill"
+            }
+        ]
+    """
     result = await diy_dot_com_crawler.product_search(keyword)
 
     return json.dumps(result)
 
 
-@mcp.tool("get_product_detail_on_diy_dot_com",
-          "Retrieve detailed product information from diy.com for a specific product URL.")
+@mcp.tool(
+    "get_product_detail_on_diy_dot_com",
+    "Retrieve detailed product information from diy.com for a specific product URL.",
+)
 async def get_product_detail_on_diy_dot_com(product_url: str) -> str:
     """Retrieve detailed product information from diy.com for a specific product URL.
 
@@ -121,7 +132,10 @@ async def get_product_detail_on_diy_dot_com(product_url: str) -> str:
     return json.dumps(result)
 
 
-@mcp.tool("search_products_on_toolstation", "Search for products on toolstation.com based on a provided keyword.")
+@mcp.tool(
+    "search_products_on_toolstation",
+    "Search for products on toolstation.com based on a provided keyword.",
+)
 async def search_products_on_toolstation(keyword: str) -> str:
     """Search for products on toolstation.com based on a provided keyword.
 
@@ -155,7 +169,10 @@ async def search_products_on_toolstation(keyword: str) -> str:
     return json.dumps(result)
 
 
-@mcp.tool("search_products_on_wickes", "Search for products on wickes.co.uk based on a provided keyword.")
+@mcp.tool(
+    "search_products_on_wickes",
+    "Search for products on wickes.co.uk based on a provided keyword.",
+)
 async def search_products_on_wickes(keyword: str) -> str:
     """Search for products on wickes.co.uk based on a provided keyword.
 
@@ -189,8 +206,10 @@ async def search_products_on_wickes(keyword: str) -> str:
     return json.dumps(result)
 
 
-@mcp.tool("get_product_detail_on_wickes",
-          "Retrieve detailed product information from wickes.co.uk for a specific product URL.")
+@mcp.tool(
+    "get_product_detail_on_wickes",
+    "Retrieve detailed product information from wickes.co.uk for a specific product URL.",
+)
 async def get_product_detail_on_wickes(product_url: str) -> str:
     """Retrieve detailed product information from wickes.co.uk for a specific product URL.
 
@@ -218,7 +237,10 @@ async def get_product_detail_on_wickes(product_url: str) -> str:
     return json.dumps(result)
 
 
-@mcp.tool("search_products_on_screwfix", "Search for products on screwfix.com based on a provided keyword.")
+@mcp.tool(
+    "search_products_on_screwfix",
+    "Search for products on screwfix.com based on a provided keyword.",
+)
 async def search_products_on_screwfix(keyword: str) -> str:
     """Search for products on screwfix.com based on a provided keyword.
 
@@ -252,8 +274,10 @@ async def search_products_on_screwfix(keyword: str) -> str:
     return json.dumps(result)
 
 
-@mcp.tool("get_product_detail_on_screwfix",
-          "Retrieve detailed product information from screwfix.com for a specific product URL.")
+@mcp.tool(
+    "get_product_detail_on_screwfix",
+    "Retrieve detailed product information from screwfix.com for a specific product URL.",
+)
 async def get_product_detail_on_screwfix(product_url: str) -> str:
     """Retrieve detailed product information from screwfix.com for a specific product URL.
 

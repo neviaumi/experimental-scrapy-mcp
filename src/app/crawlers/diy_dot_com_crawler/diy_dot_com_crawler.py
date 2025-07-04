@@ -16,33 +16,42 @@ DIY_DOT_COM_URL = "https://www.diy.com"
 @router.handler(label="diy.com product search")
 async def diy_dot_com_product_search_handler(context: ParselCrawlingContext) -> None:
     def _extract_product(product_selector):
-        product_url = product_selector.css('[data-testid=\'product-link\']::attr(href)').get()
+        product_url = product_selector.css(
+            "[data-testid='product-link']::attr(href)"
+        ).get()
         return {
-            'title': product_selector.css('[data-testid=\'product-name\']::text').get(),
-            "price": product_selector.css('[data-testid=\'product-price\']::text').get(),
+            "title": product_selector.css("[data-testid='product-name']::text").get(),
+            "price": product_selector.css("[data-testid='product-price']::text").get(),
             "url": f"{DIY_DOT_COM_URL}{product_url}",
-            "promo": product_selector.css('[data-testid=\'promotion-msg\']::text').get(),
+            "promo": product_selector.css("[data-testid='promotion-msg']::text").get(),
         }
 
-    for product in context.selector.css('[data-testid=\'product\']'):
-        await context.push_data(_extract_product(product), dataset_name=context.request.id)
+    for product in context.selector.css("[data-testid='product']"):
+        await context.push_data(
+            _extract_product(product), dataset_name=context.request.id
+        )
 
 
 @router.handler(label="diy.com product detail")
 async def diy_dot_com_product_detail_handler(context: ParselCrawlingContext) -> None:
     def clean_html(html):
-        soup = BeautifulSoup(html, 'lxml')
+        soup = BeautifulSoup(html, "lxml")
         for tag in soup.find_all(True):
-            tag.attrs.pop('style', None)
-            tag.attrs.pop('class', None)
+            tag.attrs.pop("style", None)
+            tag.attrs.pop("class", None)
         return str(soup)
 
-    await context.push_data({
-        "title": context.selector.css('[data-testid=\'product-name\']::text').get(),
-        "price": context.selector.css('[data-testid=\'product-price\']::text').get(),
-        "detail": clean_html(context.selector.css('#product-details').get()),
-        "promo": context.selector.xpath('//a[@data-testid="promotion-link"]/preceding-sibling::p/text()').get()
-    }, dataset_name=context.request.id)
+    await context.push_data(
+        {
+            "title": context.selector.css("[data-testid='product-name']::text").get(),
+            "price": context.selector.css("[data-testid='product-price']::text").get(),
+            "detail": clean_html(context.selector.css("#product-details").get()),
+            "promo": context.selector.xpath(
+                '//a[@data-testid="promotion-link"]/preceding-sibling::p/text()'
+            ).get(),
+        },
+        dataset_name=context.request.id,
+    )
 
 
 class ProductDetailResponse(TypedDict):
@@ -56,15 +65,9 @@ async def product_detail(url: str) -> ProductDetailResponse:
     request = Request.from_url(url, label="diy.com product detail")
     dataset = await Dataset.open(name=request.id)
     crawler = ParselCrawler(
-        configure_logging=False,
-        request_handler=router,
-        http_client=HttpxHttpClient()
+        configure_logging=False, request_handler=router, http_client=HttpxHttpClient()
     )
-    await crawler.run(
-        [
-            request
-        ]
-    )
+    await crawler.run([request])
 
     result = [item for item in (await dataset.get_data()).items]
     crawler.stop()
@@ -81,17 +84,16 @@ class ProductSearchResponse(TypedDict):
 
 async def product_search(keyword: str) -> list[ProductSearchResponse]:
     query = urllib.parse.urlencode({"term": keyword})
-    request = Request.from_url(f"{DIY_DOT_COM_URL}/search?{query}", label="diy.com product search")
+    request = Request.from_url(
+        f"{DIY_DOT_COM_URL}/search?{query}", label="diy.com product search"
+    )
     dataset = await Dataset.open(name=request.id)
     crawler = ParselCrawler(
         configure_logging=False,
         request_handler=router,
         http_client=HttpxHttpClient(),
     )
-    await crawler.run(
-        [
-            request]
-    )
+    await crawler.run([request])
     result = [item for item in (await dataset.get_data()).items]
     crawler.stop()
     await dataset.drop()
