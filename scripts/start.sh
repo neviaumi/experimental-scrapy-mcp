@@ -1,3 +1,4 @@
 #!/bin/bash
+set -ex
 
-uv run mcp dev ./src/app/server.py
+uv run fastapi dev --port 8080 src/app/main.py

@@ -1,9 +1,9 @@
 from mcp.server.fastmcp import FastMCP
 import mcp.server.fastmcp.prompts as prompts
-import crawlers.diy_dot_com_crawler as diy_dot_com_crawler
-import crawlers.toolstation_crawler as toolstation_crawler
-import crawlers.wickes_crawler as wickes_crawler
-import crawlers.screwfix_crawler as screwfix_crawler
+import app.crawlers.diy_dot_com_crawler as diy_dot_com_crawler
+import app.crawlers.toolstation_crawler as toolstation_crawler
+import app.crawlers.wickes_crawler as wickes_crawler
+import app.crawlers.screwfix_crawler as screwfix_crawler
 from crawlee import service_locator
 from crawlee.storage_clients import MemoryStorageClient
 
@@ -19,7 +19,7 @@ service_locator.set_storage_client(
         persist_storage=False,
     )
 )
-mcp = FastMCP("Hardware Store", dependencies=["crawlee[parsel]", "beautifulsoup4"])
+mcp = FastMCP("Hardware Store", streamable_http_path="/")
 
 
 @mcp.prompt("Hardware store staff", "helpful assistant for a hardware store")
