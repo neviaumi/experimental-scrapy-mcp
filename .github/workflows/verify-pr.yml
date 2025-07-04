@@ -10,6 +10,8 @@ jobs:
           ref: ${{github.head_ref}}
       - name: Use Python3
         uses: actions/setup-python@v5
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v6
       - run: bash ./scripts/setup.sh
       - run: bash ./scripts/test.sh
 name: Verify PR
